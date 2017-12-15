@@ -36,7 +36,7 @@ $('#new-entry-btn').on('click', function() {
 });
 
 database.ref('contacts').on('child_added', function(snapshot) {
-  console.log(snapshot.val());
+  //console.log(snapshot.val());
 
   var tbody = $('#data');
 
@@ -52,12 +52,16 @@ database.ref('contacts').on('child_added', function(snapshot) {
 
   tr.append(addButtonCell('Edit', 'edit-btn'));
 
+  tr.append(addButtonCell('Cancel', 'cancel-btn'));
+
   tr.append(addButtonCell('Delete', 'delete-btn'));
 
   tbody.append(tr);
 });
 
 $(document).on('click', '.edit-btn', editEntry);
+
+$(document).on('click', '.cancel-btn', cancelEditEntry);
 
 function validateInput() {
   var firstName = $('#first-name-input').val().trim();
@@ -93,35 +97,55 @@ function validateInput() {
 }
 
 function editEntry() {
-  $(this).parent().siblings().each(function(){
-    if($(this).attr('class') === 'data-value'){
-      var value = $(this).text();
-      
-      // Change it to an input element
-      var input = $('<input/>');
+  if($(this).text('Edit')) {
+    enableDisableEdit(this, true);
 
-      switch($(this).attr('id')) {
-        case 'first-name' :
-          input.attr('id', 'first-name-input');
-          break;
-        case 'last-name' :
-          input.attr('id', 'last-name-input');
-          break;
-        case 'phone' :
-          input.attr('id', 'phone-input');
-          break;
-        case 'email' :
-          input.attr('id', 'email-input');
-          break;
-        default:
-          console.log('Unhandled id encountered ' + $(this).attr('id'));
+     $(this).text('Submit');
+  } else {
+    // Submit
+  }
+}
+
+function cancelEditEntry() {
+  enableDisableEdit(this, false);
+  
+  // Rename submit button back to edit
+  console.log($(this).parent().siblings().children('button').attr('class', 'btn btn-primary btn-med edit-btn'));
+
+ // $(this).parent().siblings().children('button').attr('class', 'btn btn-primary btn-med edit-btn').text('Edit')
+}
+
+function enableDisableEdit(btnElement, enableEdit) {
+  $(btnElement).parent().siblings().each(function() {
+    // Each <td> tag has a class of "data-value"
+    if($(this).attr('class') === 'data-value') {
+        // Change it to an input element when edit has been selected
+        if(enableEdit) {
+          var value = $(this).text();
+
+          var input = $('<input/>');
+
+          var inputIdValue = $(this).attr('id') + '-input';
+
+          input.attr('value', value);
+
+          // Add the id used to identify this as a data input element
+          input.attr('id', inputIdValue);
+
+          $(this).empty();
+          
+          $(this).html(input);
+        } else {
+          // If execution reaches here, that means Cancel has been selected
+          // Since the current state is Edit, data has to be pulled from each
+          // input element using the val function.
+          var value = $(this).children().attr('value');
+
+          $(this).empty();
+
+          $(this).text(value);
+        }
       }
-
-      input.attr('value', value);
-
-      $(this).empty();
-      $(this).html(input);
-    }
   });
 }
 
@@ -159,14 +183,3 @@ function addButtonCell(buttonName, classValue) {
 
   return td;
 }
-
-
-
-/*
-database.ref().on('value', function(snapshot) {
-  $('#display-area').html(snapshot.child('firstName').val() + ' ' + snapshot.child('lastName').val());
-
-},function(errorObject){
-    console.log('Error encountered while attempting to write to the database!\n' + errorObject.errorCode);
-});
-*/
